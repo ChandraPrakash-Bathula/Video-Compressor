@@ -1,5 +1,2 @@
-[providers]
-  python = "..."
-
 [phases.setup]
-  aptPkgs = ["...", "ffmpeg"]
+aptPkgs = ["...", "ffmpeg"]
