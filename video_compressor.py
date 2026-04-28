@@ -346,7 +346,7 @@ class VideoCompressor:
                 "-crf", str(crf),
                 "-maxrate", maxrate,
                 "-bufsize", bufsize,
-                "-preset", "fast",
+                "-preset", "ultrafast",
                 "-pix_fmt", "yuv420p",
                 "-vf", vf,
             ]
