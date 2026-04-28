@@ -317,21 +317,12 @@ class VideoCompressor:
         else:
             crf = 36
 
-        # ---- smart resolution scaling ----
+        # ---- smart resolution scaling (disabled to maintain original resolution) ----
         vbr_kbps = target_video_bps / 1000
         out_h = height
-        if vbr_kbps < 2000 and out_h > 1080:
-            out_h = 1080
-        if vbr_kbps < 1000 and out_h > 720:
-            out_h = 720
-        if vbr_kbps < 500 and out_h > 480:
-            out_h = 480
 
         # video filter – always ensure even dimensions for libx264
-        if out_h < height:
-            vf = f"scale=-2:{out_h}"
-        else:
-            vf = "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+        vf = "scale=trunc(iw/2)*2:trunc(ih/2)*2"
 
         maxrate = f"{int(target_video_bps * 1.5) // 1000}k"
         bufsize = f"{target_video_bps * 2 // 1000}k"

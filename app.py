@@ -98,7 +98,7 @@ def create_app() -> Flask:
                 stats = compressor.smart_compress(
                     input_path=str(temp_input),
                     output_path=str(temp_output),
-                    target_reduction=75,
+                    target_reduction=40,
                 )
                 if stats is None or not temp_output.exists():
                     temp_input.unlink(missing_ok=True)
