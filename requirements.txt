@@ -3,3 +3,4 @@ click==8.1.7
 colorama==0.4.6
 tqdm==4.66.1
 Flask==3.0.3
+gunicorn==21.2.0
