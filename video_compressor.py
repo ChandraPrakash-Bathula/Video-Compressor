@@ -390,6 +390,238 @@ class VideoCompressor:
                 os.remove(output_path)
             return None
 
+    def custom_compress(
+        self,
+        input_path: str,
+        output_path: str,
+        mode: str = 'target_reduction',  # 'target_reduction' or 'preset'
+        target_reduction: int = 60,
+        quality: str = 'balanced',
+        codec: str = 'h264',
+        resolution: str = 'original',
+        audio_codec: str = 'aac',
+        preset: str = 'fast',
+        hw_accel: bool = False,
+        progress_callback = None
+    ) -> Optional[Dict]:
+        """
+        Compresses a video file with advanced customizable settings and live progress feedback.
+        Supports hardware acceleration, H.264/H.265 codecs, resolution scaling, and audio configuration.
+        """
+        if not os.path.exists(input_path):
+            logger.error(f"Input file not found: {input_path}")
+            return None
+
+        input_size = os.path.getsize(input_path)
+        if input_size == 0:
+            logger.error("Input file is empty")
+            return None
+
+        # Probing video information
+        info = self.get_video_info(input_path)
+        if not info or "format" not in info:
+            logger.error("Cannot read video file metadata")
+            return None
+
+        duration = float(info["format"].get("duration", 0))
+        if duration <= 0:
+            logger.error("Cannot determine video duration")
+            return None
+
+        video_stream = None
+        audio_stream = None
+        for s in info.get("streams", []):
+            ct = s.get("codec_type")
+            if ct == "video" and video_stream is None:
+                video_stream = s
+            elif ct == "audio" and audio_stream is None:
+                audio_stream = s
+
+        if not video_stream:
+            logger.error("No video stream found in file")
+            return None
+
+        height = int(video_stream.get("height", 0))
+        width = int(video_stream.get("width", 0))
+        if height <= 0 or width <= 0:
+            logger.error("Cannot determine video resolution")
+            return None
+
+        # Bitrate calculations
+        current_bps = int(input_size * 8 / duration)
+        target_size = input_size * (1 - target_reduction / 100.0)
+        target_total_bps = int((target_size * 8) / duration)
+
+        audio_bps = 128_000 if (audio_stream and audio_codec != 'none') else 0
+        target_video_bps = max(target_total_bps - audio_bps, 200_000)
+
+        # Map preset quality to CRF if software, or target_video_bps to CRF
+        if mode == 'target_reduction':
+            ratio = target_video_bps / max(current_bps, 1)
+            if ratio >= 0.6:
+                crf = 23
+            elif ratio >= 0.3:
+                crf = 28
+            elif ratio >= 0.15:
+                crf = 32
+            else:
+                crf = 36
+        else:
+            preset_config = self.QUALITY_PRESETS.get(quality, self.QUALITY_PRESETS['balanced'])
+            crf = preset_config['crf']
+            # If using preset, adapt CRF slightly for H.265 (better quality per unit CRF)
+            if codec == 'h265':
+                crf = min(crf + 4, 51)
+
+        # Video compression flags
+        cmd_video = []
+        if hw_accel:
+            # macOS Apple Silicon / Intel Hardware Acceleration
+            if codec == 'h265':
+                cmd_video.extend(['-c:v', 'hevc_videotoolbox'])
+            else:
+                cmd_video.extend(['-c:v', 'h264_videotoolbox'])
+
+            if mode == 'target_reduction':
+                cmd_video.extend(['-b:v', f"{int(target_video_bps) // 1000}k"])
+            else:
+                # Map quality to videotoolbox quality settings (1-100)
+                q_map = {
+                    'ultra_high': '75',
+                    'high': '65',
+                    'balanced': '55',
+                    'medium': '45',
+                    'low': '35'
+                }
+                cmd_video.extend(['-q:v', q_map.get(quality, '55')])
+        else:
+            # Software encoding
+            if codec == 'h265':
+                cmd_video.extend(['-c:v', 'libx265', '-crf', str(crf)])
+            else:
+                cmd_video.extend(['-c:v', 'libx264', '-crf', str(crf)])
+
+            # Keep target reduction bounds
+            if mode == 'target_reduction':
+                maxrate = f"{int(target_video_bps * 1.5) // 1000}k"
+                bufsize = f"{target_video_bps * 2 // 1000}k"
+                cmd_video.extend(['-maxrate', maxrate, '-bufsize', bufsize])
+
+            # Speed preset (only software encoders support speed presets directly)
+            cmd_video.extend(['-preset', preset])
+
+        # Resolution scaling
+        if resolution != 'original':
+            try:
+                target_h = int(resolution.replace('p', ''))
+                scale_factor = target_h / height if target_h < height else 1.0
+                if scale_factor < 1.0:
+                    out_w = int(round(width * scale_factor / 2) * 2)
+                    out_h = int(round(height * scale_factor / 2) * 2)
+                    vf = f"scale={out_w}:{out_h}"
+                else:
+                    vf = "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+            except Exception:
+                vf = "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+        else:
+            vf = "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+
+        cmd_video.extend(['-vf', vf])
+
+        # Audio configuration
+        cmd_audio = []
+        if not audio_stream or audio_codec == 'none':
+            cmd_audio.extend(['-an'])
+        elif audio_codec == 'copy':
+            cmd_audio.extend(['-c:a', 'copy'])
+        else:
+            audio_encoders = {
+                'aac': 'aac',
+                'mp3': 'libmp3lame',
+                'opus': 'libopus'
+            }
+            cmd_audio.extend(['-c:a', audio_encoders.get(audio_codec, 'aac'), '-b:a', '128k'])
+
+        # Build final command
+        cmd = [
+            'ffmpeg', '-y',
+            '-progress', '-',
+            '-i', input_path,
+            '-map', '0:v:0'
+        ]
+        if audio_stream and audio_codec != 'none':
+            cmd.extend(['-map', '0:a:0'])
+
+        cmd.extend(cmd_video)
+        cmd.extend(cmd_audio)
+        cmd.extend([
+            '-pix_fmt', 'yuv420p',
+            '-movflags', '+faststart',
+            output_path
+        ])
+
+        try:
+            logger.info(f"Running custom compress: {' '.join(cmd)}")
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True
+            )
+
+            speed = "1.0x"
+            while True:
+                line = process.stdout.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if line.startswith("out_time_us="):
+                    try:
+                        us = int(line.split("=")[1])
+                        elapsed_seconds = us / 1_000_000.0
+                        percent = min(round((elapsed_seconds / duration) * 100, 1), 99.9)
+                        if progress_callback:
+                            progress_callback(percent, speed)
+                    except ValueError:
+                        pass
+                elif line.startswith("speed="):
+                    speed = line.split("=")[1].strip()
+
+            process.wait()
+            if process.returncode != 0:
+                stderr_output = process.stderr.read()
+                logger.error(f"FFmpeg error code {process.returncode}:\n{stderr_output[-1000:]}")
+                if os.path.exists(output_path):
+                    os.remove(output_path)
+                return None
+
+            if not os.path.exists(output_path):
+                logger.error("Compressed output file was not found")
+                return None
+
+            output_size = os.path.getsize(output_path)
+            reduction = ((input_size - output_size) / input_size) * 100
+
+            stats = {
+                "input_size": input_size,
+                "output_size": output_size,
+                "reduction_percent": round(reduction, 1),
+                "input_size_mb": round(input_size / (1024 * 1024), 2),
+                "output_size_mb": round(output_size / (1024 * 1024), 2),
+            }
+
+            if progress_callback:
+                progress_callback(100.0, speed)
+
+            return stats
+
+        except Exception as e:
+            logger.error(f"Failed to run custom compression subprocess: {e}")
+            if os.path.exists(output_path):
+                os.remove(output_path)
+            return None
+
+
     def batch_compress(
         self,
         input_dir: str,

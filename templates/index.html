@@ -3,251 +3,710 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Video Compressor</title>
+    <title>AeroSqueeze - Premium Video Compression Workspace</title>
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <main class="page">
-      <section class="panel">
-        <h1>Video Compressor</h1>
-        <p class="subtitle">
-          Upload any video file, any size, any format.<br />
-          Get a compressed version (70 %+ smaller) without visible quality loss.
-        </p>
+    <!-- Background glowing orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
 
-        <div id="drop-zone" class="drop-zone">
-          <p class="drop-icon">&#128193;</p>
-          <p>Drag &amp; drop your video here</p>
-          <p class="small">or click to browse &mdash; all formats accepted</p>
-          <input id="video" type="file" accept="video/*" />
-        </div>
-
-        <div id="file-info" class="file-info hidden">
-          <span id="file-name" class="file-name"></span>
-          <span id="file-size" class="file-size"></span>
-        </div>
-
-        <button id="submit-btn" disabled>Compress &amp; Download</button>
-
-        <div id="progress-section" class="progress-section hidden">
-          <div class="progress-bar-bg">
-            <div id="progress-bar" class="progress-bar"></div>
+    <main class="dashboard">
+      <!-- App Header -->
+      <header class="header">
+        <div class="brand">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 10L19.5528 7.72361C20.4654 7.26731 21.5528 7.93101 21.5528 8.95139V15.0486C21.5528 16.069 20.4654 16.7327 19.5528 16.2764L15 14M15 10V14M15 10L12 8M15 14L12 16M4 5H12C13.1046 5 14 5.89543 14 7V17C14 18.1046 13.1046 19 12 19H4C2.89543 19 2 18.1046 2 17V7C2 5.89543 2.89543 5 4 5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </div>
-          <p id="progress-text" class="progress-text">Preparing&hellip;</p>
-        </div>
-
-        <div id="stats" class="stats hidden">
-          <div class="stat">
-            <span class="stat-label">Original</span>
-            <span id="stat-original" class="stat-value"></span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Compressed</span>
-            <span id="stat-compressed" class="stat-value"></span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Reduction</span>
-            <span id="stat-reduction" class="stat-value highlight"></span>
+          <div class="brand-text">
+            <h1>AeroSqueeze</h1>
+            <p class="tagline">Premium Video Optimization Studio</p>
           </div>
         </div>
+        <div class="system-status">
+          <span class="status-indicator online"></span>
+          <span class="status-label">FFmpeg Core Ready</span>
+        </div>
+      </header>
 
-        <div id="error-box" class="alert error hidden"></div>
-      </section>
+      <!-- Main Layout Grid -->
+      <div class="layout-grid">
+        <!-- Left Column: Upload & Settings -->
+        <section class="card glass settings-card">
+          <div class="card-header">
+            <h2>1. Choose & Configure</h2>
+            <p>Upload a video and choose compression settings</p>
+          </div>
+
+          <!-- Upload Drop Zone -->
+          <div id="drop-zone" class="drop-zone">
+            <input id="video-input" type="file" accept="video/*" />
+            <div class="drop-zone-content">
+              <div class="upload-icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L13 16M17 20L21 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <p class="upload-title">Drag & drop video file</p>
+              <p class="upload-subtitle">or click to browse local files</p>
+              <p class="upload-limit">Supports MP4, MOV, AVI, MKV up to 500MB</p>
+            </div>
+          </div>
+
+          <!-- File Selected Info -->
+          <div id="selected-file-info" class="selected-file-info hidden animate-fade-in">
+            <div class="file-icon-wrapper">🎬</div>
+            <div class="file-details">
+              <span id="selected-filename" class="filename">my-video-file.mp4</span>
+              <span id="selected-filesize" class="filesize">45.2 MB</span>
+            </div>
+            <button id="clear-selected-btn" class="clear-btn" title="Remove file">✕</button>
+          </div>
+
+          <!-- Configuration Panel -->
+          <div class="config-panel">
+            <!-- Mode Toggle: Target vs Preset -->
+            <div class="mode-tabs">
+              <button id="tab-target" class="tab-btn active" onclick="switchMode('target')">Target Size</button>
+              <button id="tab-preset" class="tab-btn" onclick="switchMode('preset')">Quality Preset</button>
+            </div>
+
+            <!-- Target Reduction View -->
+            <div id="config-target-view" class="config-view-section">
+              <div class="input-header">
+                <label>Target File Size Reduction</label>
+                <span id="reduction-val" class="badge badge-accent">60%</span>
+              </div>
+              <input type="range" id="reduction-slider" min="10" max="90" value="60" class="slider-input" oninput="updateReductionLabel(this.value)" />
+              <p id="reduction-estimate" class="help-text">Est. Output Size: --</p>
+            </div>
+
+            <!-- Quality Preset View -->
+            <div id="config-preset-view" class="config-view-section hidden">
+              <label>Select Quality Level</label>
+              <div class="preset-grid">
+                <button class="preset-btn" onclick="selectPreset('low')">
+                  <strong>Low</strong>
+                  <span>Max Size Save</span>
+                </button>
+                <button class="preset-btn" onclick="selectPreset('medium')">
+                  <strong>Medium</strong>
+                  <span>Balanced</span>
+                </button>
+                <button class="preset-btn active" onclick="selectPreset('balanced')">
+                  <strong>Balanced</strong>
+                  <span>Recommended</span>
+                </button>
+                <button class="preset-btn" onclick="selectPreset('high')">
+                  <strong>High</strong>
+                  <span>Visual Lossless</span>
+                </button>
+                <button class="preset-btn" onclick="selectPreset('ultra_high')">
+                  <strong>Archival</strong>
+                  <span>Original Details</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Advanced Accordion Trigger -->
+            <button id="advanced-toggle" class="accordion-trigger" onclick="toggleAdvanced()">
+              <span>Advanced Encoding Options</span>
+              <span class="chevron">▼</span>
+            </button>
+
+            <!-- Advanced Accordion Content -->
+            <div id="advanced-content" class="accordion-content collapsed">
+              <div class="advanced-grid">
+                <!-- Video Codec -->
+                <div class="control-group">
+                  <label for="opt-codec">Codec Format</label>
+                  <select id="opt-codec" class="select-input">
+                    <option value="h264" selected>H.264 (Universal compatibility)</option>
+                    <option value="h265">H.265 / HEVC (50% better compression)</option>
+                  </select>
+                </div>
+
+                <!-- Resolution -->
+                <div class="control-group">
+                  <label for="opt-resolution">Target Resolution</label>
+                  <select id="opt-resolution" class="select-input">
+                    <option value="original" selected>Keep Original Resolution</option>
+                    <option value="1080p">Scale to 1080p (Full HD)</option>
+                    <option value="720p">Scale to 720p (HD)</option>
+                    <option value="480p">Scale to 480p (SD/Mobile)</option>
+                  </select>
+                </div>
+
+                <!-- Audio options -->
+                <div class="control-group">
+                  <label for="opt-audio">Audio Optimization</label>
+                  <select id="opt-audio" class="select-input">
+                    <option value="aac" selected>AAC (Optimized High Quality)</option>
+                    <option value="mp3">MP3 (Universal Audio)</option>
+                    <option value="opus">Opus (Ultra low bitrate)</option>
+                    <option value="copy">Copy stream (No re-encode, fast)</option>
+                    <option value="none">Mute (Remove audio track)</option>
+                  </select>
+                </div>
+
+                <!-- Speed Preset -->
+                <div class="control-group">
+                  <label for="opt-preset">Encoding Speed</label>
+                  <select id="opt-preset" class="select-input">
+                    <option value="ultrafast">Ultrafast (Lowest compression)</option>
+                    <option value="veryfast">Very Fast</option>
+                    <option value="fast" selected>Fast (Recommended balance)</option>
+                    <option value="medium">Medium</option>
+                    <option value="slow">Slow (Best quality compression)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Hardware Acceleration Option -->
+              <div class="toggle-group">
+                <div class="toggle-text">
+                  <span class="toggle-label">macOS Hardware Acceleration</span>
+                  <span class="toggle-sub">Uses Apple Silicon/Intel Videotoolbox hardware engine</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="opt-hw" checked />
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button id="compress-btn" class="glowing-btn" disabled onclick="startCompressionJob()">
+            Compress & Optimize Video
+          </button>
+        </section>
+
+        <!-- Right Column: Queue Manager -->
+        <section class="card glass queue-card">
+          <div class="card-header">
+            <h2>2. Active Workspace Queue</h2>
+            <p>Monitor real-time progress and downloads</p>
+          </div>
+
+          <!-- Queue Empty State -->
+          <div id="queue-empty" class="queue-empty">
+            <div class="empty-icon">📂</div>
+            <p class="empty-title">Queue is empty</p>
+            <p class="empty-subtitle">Configure your settings and click compress to add jobs to this queue</p>
+          </div>
+
+          <!-- Queue Items List -->
+          <div id="queue-list" class="queue-list hidden">
+            <!-- JavaScript dynamically renders cards here -->
+          </div>
+        </section>
+      </div>
     </main>
 
+    <!-- Side-by-Side Quality Comparison Modal -->
+    <div id="compare-modal" class="modal hidden">
+      <div class="modal-backdrop" onclick="closeCompareModal()"></div>
+      <div class="modal-content glass animate-zoom-in">
+        <header class="modal-header">
+          <div class="modal-title-group">
+            <h3>Visual Quality Compare</h3>
+            <p id="compare-filename">video_file.mp4</p>
+          </div>
+          <button class="modal-close-btn" onclick="closeCompareModal()">✕</button>
+        </header>
+
+        <div class="compare-workspace">
+          <!-- Split Screen Container -->
+          <div class="compare-container">
+            <!-- Left side: Original Video (always in background) -->
+            <div class="compare-pane original-pane">
+              <video id="vid-orig" autoplay loop controls muted></video>
+              <div class="pane-tag tag-left">Original Video</div>
+            </div>
+
+            <!-- Right side: Compressed Video (clipped overlay) -->
+            <div id="compare-split" class="compare-pane compressed-pane">
+              <video id="vid-comp" autoplay loop muted></video>
+              <div class="pane-tag tag-right">Compressed Video</div>
+            </div>
+
+            <!-- Draggable Split Overlay Slider -->
+            <input type="range" id="compare-slider" min="0" max="100" value="50" class="compare-range-slider" />
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <div class="playback-tip">
+            💡 <strong>Interactive Sync:</strong> Both videos play and seek in exact synchronization. Move the slider handle left/right to inspect pixel retention.
+          </div>
+          <button class="modal-action-btn" onclick="closeCompareModal()">Done Reviewing</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Frontend Core Application Logic -->
     <script>
-      /* ---- DOM refs ---- */
+      var CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB chunk size
+      var currentMode = 'target'; // 'target' or 'preset'
+      var selectedQualityPreset = 'balanced';
+      var activeFile = null;
+      var activeJobs = {};
+
+      /* DOM Cache */
+      var videoInput = document.getElementById("video-input");
       var dropZone = document.getElementById("drop-zone");
-      var fileInput = document.getElementById("video");
-      var fileInfo = document.getElementById("file-info");
-      var fileName = document.getElementById("file-name");
-      var fileSizeEl = document.getElementById("file-size");
-      var submitBtn = document.getElementById("submit-btn");
-      var progressSection = document.getElementById("progress-section");
-      var progressBar = document.getElementById("progress-bar");
-      var progressText = document.getElementById("progress-text");
-      var statsDiv = document.getElementById("stats");
-      var errorBox = document.getElementById("error-box");
+      var selectedFileInfo = document.getElementById("selected-file-info");
+      var selectedFilename = document.getElementById("selected-filename");
+      var selectedFilesize = document.getElementById("selected-filesize");
+      var clearSelectedBtn = document.getElementById("clear-selected-btn");
+      var compressBtn = document.getElementById("compress-btn");
+      var reductionSlider = document.getElementById("reduction-slider");
+      var reductionVal = document.getElementById("reduction-val");
+      var reductionEstimate = document.getElementById("reduction-estimate");
+      var queueEmpty = document.getElementById("queue-empty");
+      var queueList = document.getElementById("queue-list");
+      var advancedContent = document.getElementById("advanced-content");
+      var advancedToggle = document.getElementById("advanced-toggle");
 
-      var CHUNK = 4 * 1024 * 1024; // 4 MB per chunk
-
-      /* ---- helpers ---- */
-      function fmt(b) {
-        if (b < 1024) return b + " B";
-        if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
-        if (b < 1073741824) return (b / 1048576).toFixed(1) + " MB";
-        return (b / 1073741824).toFixed(2) + " GB";
-      }
-      function fmtTime(s) {
-        if (s < 60) return Math.ceil(s) + "s";
-        var m = Math.floor(s / 60), sec = Math.ceil(s % 60);
-        return m + "m " + sec + "s";
+      /* Helper format size */
+      function formatBytes(bytes, decimals = 1) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
       }
 
-      function showFile(f) {
-        fileName.textContent = f.name;
-        fileSizeEl.textContent = fmt(f.size);
-        fileInfo.classList.remove("hidden");
-        submitBtn.disabled = false;
-        statsDiv.classList.add("hidden");
-        errorBox.classList.add("hidden");
-      }
-      function showError(msg) {
-        errorBox.textContent = msg;
-        errorBox.classList.remove("hidden");
-      }
-      function resetUI() {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Compress & Download";
-        progressSection.classList.add("hidden");
-        progressBar.style.width = "0%";
-        progressBar.classList.remove("indeterminate");
-      }
-
-      /* ---- drag & drop ---- */
-      ["dragenter", "dragover"].forEach(function (e) {
-        dropZone.addEventListener(e, function (ev) { ev.preventDefault(); dropZone.classList.add("dragover"); });
+      /* Drag & Drop Handlers */
+      ["dragenter", "dragover"].forEach(eventName => {
+        dropZone.addEventListener(eventName, e => {
+          e.preventDefault();
+          dropZone.classList.add("dragover");
+        }, false);
       });
-      ["dragleave", "drop"].forEach(function (e) {
-        dropZone.addEventListener(e, function (ev) { ev.preventDefault(); dropZone.classList.remove("dragover"); });
-      });
-      dropZone.addEventListener("drop", function (e) {
-        if (e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; showFile(e.dataTransfer.files[0]); }
-      });
-      fileInput.addEventListener("change", function () { if (fileInput.files[0]) showFile(fileInput.files[0]); });
 
-      /* ---- network helpers ---- */
-      function jsonReq(method, url, body) {
-        return new Promise(function (ok, fail) {
-          var xhr = new XMLHttpRequest();
-          xhr.open(method, url);
-          xhr.timeout = 0;
-          if (body !== undefined) xhr.setRequestHeader("Content-Type", "application/json");
-          xhr.onload = function () {
-            try { var d = JSON.parse(xhr.responseText); ok(d); }
-            catch (_) { fail({ error: "Invalid response from server (status " + xhr.status + ")." }); }
-          };
-          xhr.onerror = function () { fail({ error: "Network error." }); };
-          xhr.send(body !== undefined ? JSON.stringify(body) : null);
+      ["dragleave", "drop"].forEach(eventName => {
+        dropZone.addEventListener(eventName, e => {
+          e.preventDefault();
+          dropZone.classList.remove("dragover");
+        }, false);
+      });
+
+      dropZone.addEventListener("drop", e => {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        if (file && file.type.startsWith("video/")) {
+          setFile(file);
+        } else {
+          alert("Please upload a valid video file.");
+        }
+      });
+
+      videoInput.addEventListener("change", e => {
+        const file = e.target.files[0];
+        if (file) setFile(file);
+      });
+
+      clearSelectedBtn.addEventListener("click", () => {
+        activeFile = null;
+        videoInput.value = "";
+        selectedFileInfo.classList.add("hidden");
+        dropZone.classList.remove("hidden");
+        compressBtn.disabled = true;
+        updateEstimate();
+      });
+
+      function setFile(file) {
+        activeFile = file;
+        selectedFilename.textContent = file.name;
+        selectedFilesize.textContent = formatBytes(file.size);
+        dropZone.classList.add("hidden");
+        selectedFileInfo.classList.remove("hidden");
+        compressBtn.disabled = false;
+        updateEstimate();
+      }
+
+      /* Mode switcher */
+      function switchMode(mode) {
+        currentMode = mode;
+        document.getElementById("tab-target").classList.toggle("active", mode === 'target');
+        document.getElementById("tab-preset").classList.toggle("active", mode === 'preset');
+        document.getElementById("config-target-view").classList.toggle("hidden", mode !== 'target');
+        document.getElementById("config-preset-view").classList.toggle("hidden", mode !== 'preset');
+      }
+
+      function updateReductionLabel(val) {
+        reductionVal.textContent = val + "%";
+        updateEstimate();
+      }
+
+      function selectPreset(preset) {
+        selectedQualityPreset = preset;
+        document.querySelectorAll(".preset-btn").forEach(btn => btn.classList.remove("active"));
+        event.currentTarget.classList.add("active");
+      }
+
+      function updateEstimate() {
+        if (!activeFile) {
+          reductionEstimate.textContent = "Est. Output Size: --";
+          return;
+        }
+        if (currentMode === 'target') {
+          const reduction = parseFloat(reductionSlider.value);
+          const estSize = activeFile.size * (1 - reduction / 100);
+          reductionEstimate.textContent = `Est. Output Size: ~${formatBytes(estSize)} (save ${formatBytes(activeFile.size - estSize)})`;
+        }
+      }
+
+      function toggleAdvanced() {
+        const collapsed = advancedContent.classList.contains("collapsed");
+        if (collapsed) {
+          advancedContent.classList.remove("collapsed");
+          advancedToggle.classList.add("active");
+        } else {
+          advancedContent.classList.add("collapsed");
+          advancedToggle.classList.remove("active");
+        }
+      }
+
+      /* Network HTTP Wrapper */
+      function postJson(url, data) {
+        return fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        }).then(res => {
+          if (!res.ok) throw new Error("HTTP error " + res.status);
+          return res.json();
         });
       }
 
-      function uploadChunk(url, blob) {
-        return new Promise(function (ok, fail) {
-          var fd = new FormData();
-          fd.append("chunk", blob);
-          var xhr = new XMLHttpRequest();
-          xhr.open("POST", url);
-          xhr.timeout = 60000;
-          xhr.onload = function () {
-            try {
-              var d = JSON.parse(xhr.responseText);
-              if (xhr.status >= 200 && xhr.status < 300) ok(d);
-              else fail(d);
-            } catch (_) { fail({ error: "Chunk failed (" + xhr.status + ")" }); }
-          };
-          xhr.onerror = function () { fail({ error: "Network error on chunk." }); };
-          xhr.ontimeout = function () { fail({ error: "Chunk upload timed out." }); };
-          xhr.send(fd);
+      function postChunk(url, formData) {
+        return fetch(url, {
+          method: "POST",
+          body: formData
+        }).then(res => {
+          if (!res.ok) throw new Error("HTTP chunk error " + res.status);
+          return res.json();
         });
       }
 
-      /* ---- main flow ---- */
-      submitBtn.addEventListener("click", async function () {
-        var file = fileInput.files[0];
-        if (!file) return;
+      /* Job Actions */
+      function startCompressionJob() {
+        if (!activeFile) return;
 
-        errorBox.classList.add("hidden");
-        statsDiv.classList.add("hidden");
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Processing\u2026";
-        progressSection.classList.remove("hidden");
-        progressBar.style.width = "0%";
-        progressText.textContent = "Starting upload\u2026";
+        const file = activeFile;
+        // Generate client-side job UUID to uniquely identify this queue card
+        const jobId = "job_" + Math.random().toString(36).substring(2, 11);
+        
+        // Grab values from UI controls at start time
+        const config = {
+          mode: currentMode,
+          target_reduction: currentMode === 'target' ? parseInt(reductionSlider.value) : 60,
+          quality: selectedQualityPreset,
+          codec: document.getElementById("opt-codec").value,
+          resolution: document.getElementById("opt-resolution").value,
+          audio_codec: document.getElementById("opt-audio").value,
+          preset: document.getElementById("opt-preset").value,
+          hw_accel: document.getElementById("opt-hw").checked
+        };
+
+        // Cache local state
+        activeJobs[jobId] = {
+          id: jobId,
+          file: file,
+          filename: file.name,
+          filesize: file.size,
+          localUrl: URL.createObjectURL(file),
+          downloadId: null,
+          config: config,
+          progress: 0,
+          status: 'Starting upload...',
+          stats: null,
+          error: null,
+          pollingInterval: null
+        };
+
+        // Render Card in Queue
+        renderJobCard(jobId);
+        
+        // Show Queue List and Hide Empty State
+        queueEmpty.classList.add("hidden");
+        queueList.classList.remove("hidden");
+
+        // Clear Selection for Next Upload
+        clearSelectedBtn.click();
+
+        // Kick off Chunked Upload Flow
+        executeUpload(jobId);
+      }
+
+      /* Render Queue Item Card */
+      function renderJobCard(jobId) {
+        const job = activeJobs[jobId];
+        const card = document.createElement("div");
+        card.id = `card-${jobId}`;
+        card.className = "queue-item animate-fade-in";
+        card.innerHTML = `
+          <div class="queue-item-header">
+            <div class="queue-item-info">
+              <span class="queue-item-name" title="${job.filename}">${job.filename}</span>
+              <span class="queue-item-meta">${formatBytes(job.filesize)}</span>
+            </div>
+            <div id="badge-${jobId}" class="badge badge-progress">Uploading</div>
+          </div>
+          
+          <div class="progress-container">
+            <div class="progress-bar-track">
+              <div id="bar-${jobId}" class="progress-bar-fill" style="width: 0%"></div>
+            </div>
+            <div class="progress-stats">
+              <span id="text-percent-${jobId}">0%</span>
+              <span id="text-eta-${jobId}">Starting...</span>
+            </div>
+          </div>
+
+          <div id="stats-panel-${jobId}" class="queue-item-stats-panel hidden">
+            <div class="stats-grid">
+              <div class="stat-pill">
+                <span>Original</span>
+                <strong id="orig-size-${jobId}">--</strong>
+              </div>
+              <div class="stat-pill">
+                <span>Compressed</span>
+                <strong id="comp-size-${jobId}">--</strong>
+              </div>
+              <div class="stat-pill">
+                <span>Saved</span>
+                <strong id="saved-${jobId}" class="success-text">--</strong>
+              </div>
+            </div>
+          </div>
+
+          <div id="actions-${jobId}" class="queue-item-actions hidden">
+            <button class="action-btn secondary-btn" onclick="openCompareModal('${jobId}')">🔍 Compare Quality</button>
+            <a id="dl-link-${jobId}" class="action-btn primary-btn download-btn-pulse" href="#" download>📥 Download File</a>
+          </div>
+
+          <div id="error-panel-${jobId}" class="error-panel hidden"></div>
+
+          <button class="remove-card-btn" onclick="removeJobCard('${jobId}')">✕</button>
+        `;
+        queueList.appendChild(card);
+      }
+
+      /* Core Upload & Compression Flow */
+      async function executeUpload(jobId) {
+        const job = activeJobs[jobId];
+        const file = job.file;
+        let serverUploadId = null;
 
         try {
-          /* 1. register upload */
-          var start = await jsonReq("POST", "/upload/start", {
-            filename: file.name, totalSize: file.size
+          // 1. Initial Handshake /upload/start
+          const handshake = await postJson("/upload/start", {
+            filename: file.name,
+            totalSize: file.size
           });
-          if (start.error) { showError(start.error); resetUI(); return; }
-          var uid = start.upload_id;
 
-          /* 2. sequential chunked upload with speed & ETA */
-          var totalChunks = Math.ceil(file.size / CHUNK);
-          var sent = 0;
-          var t0 = Date.now();
+          if (handshake.error) throw new Error(handshake.error);
+          serverUploadId = handshake.upload_id;
 
-          for (var i = 0; i < totalChunks; i++) {
-            var off = i * CHUNK;
-            var blob = file.slice(off, Math.min(off + CHUNK, file.size));
-            var retries = 3;
-            var ok = false;
-            while (retries > 0 && !ok) {
+          // 2. Chunk-by-Chunk Upload loop
+          const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+          const t0 = Date.now();
+
+          for (let i = 0; i < totalChunks; i++) {
+            const offset = i * CHUNK_SIZE;
+            const blob = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
+
+            let retries = 3;
+            let chunkSuccess = false;
+            while (retries > 0 && !chunkSuccess) {
               try {
-                var res = await uploadChunk("/upload/chunk/" + uid, blob);
-                if (res.error) throw res;
-                ok = true;
+                const formData = new FormData();
+                formData.append("chunk", blob);
+                
+                const res = await postChunk(`/upload/chunk/${serverUploadId}`, formData);
+                if (res.error) throw new Error(res.error);
+                chunkSuccess = true;
               } catch (e) {
                 retries--;
-                if (retries <= 0) { showError(e.error || "Upload failed after retries."); resetUI(); return; }
-                await new Promise(function (r) { setTimeout(r, 1000); });
+                if (retries <= 0) throw e;
+                await new Promise(r => setTimeout(r, 1000));
               }
             }
-            sent += blob.size;
-            var pct = Math.min(Math.round((sent / file.size) * 100), 100);
-            progressBar.style.width = pct + "%";
-            var elapsed = (Date.now() - t0) / 1000;
-            var speed = sent / (elapsed || 1);
-            var remaining = (file.size - sent) / (speed || 1);
-            progressText.textContent =
-              "Uploading\u2026 " + pct + "%  |  " +
-              fmt(speed) + "/s  |  ETA " + fmtTime(remaining);
+
+            // Calculate progress, speed and ETA
+            const uploadedBytes = Math.min(offset + blob.size, file.size);
+            const percent = Math.round((uploadedBytes / file.size) * 100);
+            const elapsed = (Date.now() - t0) / 1000;
+            const uploadSpeed = uploadedBytes / (elapsed || 1);
+            const remainingSec = (file.size - uploadedBytes) / (uploadSpeed || 1);
+
+            // Update DOM Card Progress
+            document.getElementById(`bar-${jobId}`).style.width = percent + "%";
+            document.getElementById(`text-percent-${jobId}`).textContent = percent + "%";
+            document.getElementById(`text-eta-${jobId}`).textContent = 
+              `Uploading | Speed: ${formatBytes(uploadSpeed)}/s | ETA: ${Math.ceil(remainingSec)}s`;
           }
 
-          /* 3. start compression (returns immediately) */
-          progressBar.style.width = "100%";
-          progressBar.classList.add("indeterminate");
-          progressText.textContent = "Starting compression\u2026";
+          // 3. Trigger Server Compression
+          document.getElementById(`badge-${jobId}`).className = "badge badge-compressing";
+          document.getElementById(`badge-${jobId}`).textContent = "Compressing";
+          document.getElementById(`bar-${jobId}`).classList.add("indeterminate");
+          document.getElementById(`text-eta-${jobId}`).textContent = "Queuing engine...";
 
-          var compStart = await jsonReq("POST", "/upload/complete/" + uid);
-          if (compStart.error) { showError(compStart.error); resetUI(); return; }
+          const compressionStart = await postJson(`/upload/complete/${serverUploadId}`, job.config);
+          if (compressionStart.error) throw new Error(compressionStart.error);
 
-          /* 4. poll /status until done */
-          var compT0 = Date.now();
-          while (true) {
-            await new Promise(function (r) { setTimeout(r, 2000); });
-            var st;
-            try { st = await jsonReq("GET", "/status/" + uid); }
-            catch (_) { continue; /* network blip, retry */ }
-
-            var compElapsed = Math.round((Date.now() - compT0) / 1000);
-            progressText.textContent =
-              "Compressing video\u2026 " + fmtTime(compElapsed) + " elapsed";
-
-            if (st.status === "done") {
-              if (st.stats) {
-                document.getElementById("stat-original").textContent = st.stats.input_size_mb + " MB";
-                document.getElementById("stat-compressed").textContent = st.stats.output_size_mb + " MB";
-                document.getElementById("stat-reduction").textContent = st.stats.reduction_percent + "%";
-                statsDiv.classList.remove("hidden");
-              }
-              progressText.textContent = "Done! Starting download\u2026";
-              progressBar.classList.remove("indeterminate");
-              window.location.href = "/download/" + st.download_id;
-              break;
-            } else if (st.status === "error") {
-              showError(st.error || "Compression failed.");
-              break;
-            }
-            /* else status === "compressing" — keep polling */
-          }
+          // 4. Start polling status
+          job.pollingInterval = setInterval(() => pollJobStatus(jobId, serverUploadId), 1500);
 
         } catch (err) {
-          showError(err.error || err.message || "An unexpected error occurred.");
+          handleJobError(jobId, err.message || "Failed during uploading process.");
         }
-        resetUI();
-      });
+      }
+
+      /* Polling job status */
+      async function pollJobStatus(jobId, serverId) {
+        const job = activeJobs[jobId];
+        if (!job) return;
+
+        try {
+          const res = await fetch(`/status/${serverId}`);
+          if (!res.ok) throw new Error("Status API returned error code " + res.status);
+          const data = await res.json();
+
+          if (data.status === "compressing") {
+            const percent = data.progress || 0;
+            document.getElementById(`bar-${jobId}`).classList.remove("indeterminate");
+            document.getElementById(`bar-${jobId}`).style.width = percent + "%";
+            document.getElementById(`text-percent-${jobId}`).textContent = percent + "%";
+            document.getElementById(`text-eta-${jobId}`).textContent = 
+              `Encoding: ${percent}% | Speed: ${data.speed || "1.0x"} | ETA: ${data.eta || "calculating"}`;
+          } else if (data.status === "done") {
+            clearInterval(job.pollingInterval);
+            job.downloadId = data.download_id;
+            job.stats = data.stats;
+
+            // Render Final State
+            document.getElementById(`badge-${jobId}`).className = "badge badge-success";
+            document.getElementById(`badge-${jobId}`).textContent = "Success";
+            document.getElementById(`bar-${jobId}`).style.width = "100%";
+            document.getElementById(`bar-${jobId}`).classList.remove("indeterminate");
+            document.getElementById(`text-percent-${jobId}`).textContent = "100%";
+            document.getElementById(`text-eta-${jobId}`).textContent = "Compression Complete!";
+
+            // Render stats
+            if (data.stats) {
+              document.getElementById(`orig-size-${jobId}`).textContent = formatBytes(data.stats.input_size);
+              document.getElementById(`comp-size-${jobId}`).textContent = formatBytes(data.stats.output_size);
+              document.getElementById(`saved-${jobId}`).textContent = `-${data.stats.reduction_percent}%`;
+              document.getElementById(`stats-panel-${jobId}`).classList.remove("hidden");
+            }
+
+            // Show download and compare actions
+            const dlLink = document.getElementById(`dl-link-${jobId}`);
+            dlLink.href = `/download/${data.download_id}`;
+            document.getElementById(`actions-${jobId}`).classList.remove("hidden");
+
+            // Trigger browser download automatically
+            window.location.href = `/download/${data.download_id}`;
+          } else if (data.status === "error") {
+            clearInterval(job.pollingInterval);
+            throw new Error(data.error || "Transcoding crashed on server.");
+          }
+        } catch (err) {
+          clearInterval(job.pollingInterval);
+          handleJobError(jobId, err.message);
+        }
+      }
+
+      /* Job Error Handlers */
+      function handleJobError(jobId, msg) {
+        const job = activeJobs[jobId];
+        if (job && job.pollingInterval) clearInterval(job.pollingInterval);
+
+        document.getElementById(`badge-${jobId}`).className = "badge badge-danger";
+        document.getElementById(`badge-${jobId}`).textContent = "Error";
+        document.getElementById(`bar-${jobId}`).style.width = "0%";
+        document.getElementById(`bar-${jobId}`).classList.remove("indeterminate");
+        
+        const errPanel = document.getElementById(`error-panel-${jobId}`);
+        errPanel.textContent = "Error: " + msg;
+        errPanel.classList.remove("hidden");
+      }
+
+      /* Remove card from queue */
+      function removeJobCard(jobId) {
+        const job = activeJobs[jobId];
+        if (job) {
+          if (job.pollingInterval) clearInterval(job.pollingInterval);
+          URL.revokeObjectURL(job.localUrl);
+          delete activeJobs[jobId];
+        }
+
+        const card = document.getElementById(`card-${jobId}`);
+        if (card) card.remove();
+
+        if (Object.keys(activeJobs).length === 0) {
+          queueEmpty.classList.remove("hidden");
+          queueList.classList.add("hidden");
+        }
+      }
+
+      /* Video Comparison Modal Logic */
+      var vidOrig = document.getElementById("vid-orig");
+      var vidComp = document.getElementById("vid-comp");
+      var compareSlider = document.getElementById("compare-slider");
+      var compareSplit = document.getElementById("compare-split");
+      var compareFilename = document.getElementById("compare-filename");
+
+      function openCompareModal(jobId) {
+        const job = activeJobs[jobId];
+        if (!job) return;
+
+        compareFilename.textContent = job.filename;
+        
+        // Reset player sources
+        vidOrig.src = job.localUrl;
+        vidComp.src = `/download/${job.downloadId}`;
+
+        // Reset split slider values
+        compareSlider.value = 50;
+        compareSplit.style.clipPath = "inset(0 0 0 50%)";
+
+        // Unhide Modal
+        document.getElementById("compare-modal").classList.remove("hidden");
+
+        // Sync dual playback controls
+        vidOrig.onplay = () => vidComp.play();
+        vidOrig.onpause = () => vidComp.pause();
+        vidOrig.onseeking = () => { vidComp.currentTime = vidOrig.currentTime; };
+        vidOrig.onseeked = () => { vidComp.currentTime = vidOrig.currentTime; };
+        vidOrig.onratechange = () => { vidComp.playbackRate = vidOrig.playbackRate; };
+
+        // Handle Slider scrubbing
+        compareSlider.addEventListener("input", function() {
+          compareSplit.style.clipPath = `inset(0 0 0 ${this.value}%)`;
+        });
+      }
+
+      function closeCompareModal() {
+        document.getElementById("compare-modal").classList.add("hidden");
+        vidOrig.pause();
+        vidComp.pause();
+        vidOrig.src = "";
+        vidComp.src = "";
+      }
     </script>
   </body>
 </html>

@@ -90,23 +90,72 @@ def create_app() -> Flask:
         if not temp_input.exists():
             return jsonify(error="Uploaded file not found."), 404
 
-        _jobs[upload_id] = {"status": "compressing"}
+        # Extract advanced options from the request payload
+        data = request.get_json(silent=True) or {}
+        mode = data.get("mode", "target_reduction")
+        target_reduction = int(data.get("target_reduction", 60))
+        quality = data.get("quality", "balanced")
+        codec = data.get("codec", "h264")
+        resolution = data.get("resolution", "original")
+        audio_codec = data.get("audio_codec", "aac")
+        preset = data.get("preset", "fast")
+        hw_accel = bool(data.get("hw_accel", False))
+
+        # Initialize progress tracker in jobs list
+        _jobs[upload_id] = {
+            "status": "compressing",
+            "progress": 0,
+            "eta": "Estimating...",
+            "speed": "0x",
+            "filename": info["filename"],
+            "total_size": info["total_size"]
+        }
+
+        import time
+        start_time = time.time()
 
         def run_compress():
             temp_output = OUTPUT_DIR / f"{upload_id}_compressed.mp4"
+            
+            def progress_callback(percent, speed):
+                elapsed = time.time() - start_time
+                if percent > 0:
+                    total_est = elapsed / (percent / 100.0)
+                    eta_sec = max(0, int(total_est - elapsed))
+                    if eta_sec < 60:
+                        eta_str = f"{eta_sec}s"
+                    else:
+                        eta_str = f"{eta_sec // 60}m {eta_sec % 60}s"
+                else:
+                    eta_str = "Estimating..."
+                
+                # Check if this job exists (avoid writing after cleanup/errors)
+                if upload_id in _jobs:
+                    _jobs[upload_id]["progress"] = percent
+                    _jobs[upload_id]["eta"] = eta_str
+                    _jobs[upload_id]["speed"] = speed
+
             try:
-                stats = compressor.smart_compress(
+                stats = compressor.custom_compress(
                     input_path=str(temp_input),
                     output_path=str(temp_output),
-                    target_reduction=60,
+                    mode=mode,
+                    target_reduction=target_reduction,
+                    quality=quality,
+                    codec=codec,
+                    resolution=resolution,
+                    audio_codec=audio_codec,
+                    preset=preset,
+                    hw_accel=hw_accel,
+                    progress_callback=progress_callback
                 )
+
                 if stats is None or not temp_output.exists():
                     temp_input.unlink(missing_ok=True)
                     temp_output.unlink(missing_ok=True)
                     _jobs[upload_id] = {
                         "status": "error",
-                        "error": "Compression failed. The file may not be a valid "
-                                 "video or is already heavily compressed.",
+                        "error": "Compression failed. The file may not be a valid video or is already heavily compressed.",
                     }
                     return
 
@@ -120,13 +169,15 @@ def create_app() -> Flask:
                     "status": "done",
                     "download_id": upload_id,
                     "stats": stats,
+                    "progress": 100,
+                    "filename": info["filename"]
                 }
-            except Exception:
+            except Exception as e:
                 temp_input.unlink(missing_ok=True)
                 temp_output.unlink(missing_ok=True)
                 _jobs[upload_id] = {
                     "status": "error",
-                    "error": "An unexpected error occurred during processing.",
+                    "error": f"An unexpected error occurred during processing: {str(e)}",
                 }
 
         threading.Thread(target=run_compress, daemon=True).start()
