@@ -98,7 +98,7 @@ def create_app() -> Flask:
         codec = data.get("codec", "h264")
         resolution = data.get("resolution", "original")
         audio_codec = data.get("audio_codec", "aac")
-        preset = data.get("preset", "fast")
+        preset = data.get("preset", "ultrafast")
         hw_accel = bool(data.get("hw_accel", False))
 
         # Initialize progress tracker in jobs list
