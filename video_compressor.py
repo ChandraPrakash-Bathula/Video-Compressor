@@ -474,8 +474,11 @@ class VideoCompressor:
                 crf = min(crf + 4, 51)
 
         # Video compression flags
+        import platform
+        is_macos = platform.system() == 'Darwin'
+
         cmd_video = []
-        if hw_accel:
+        if hw_accel and is_macos:
             # macOS Apple Silicon / Intel Hardware Acceleration
             if codec == 'h265':
                 cmd_video.extend(['-c:v', 'hevc_videotoolbox'])
@@ -495,7 +498,10 @@ class VideoCompressor:
                 }
                 cmd_video.extend(['-q:v', q_map.get(quality, '55')])
         else:
-            # Software encoding
+            # Software encoding (or fallback if hw_accel is requested but not on macOS)
+            if hw_accel and not is_macos:
+                logger.warning("Hardware acceleration requested but not running on macOS. Falling back to software encoding.")
+
             if codec == 'h265':
                 cmd_video.extend(['-c:v', 'libx265', '-crf', str(crf)])
             else:
