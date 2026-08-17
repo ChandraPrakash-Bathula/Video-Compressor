@@ -1,383 +1,267 @@
-# VideoCompressor 🎬
+# VideoCompressor
 
-A powerful Python-based video compression tool that reduces video file sizes while maintaining video and audio quality. Built on FFmpeg, it supports all video formats and provides flexible quality presets.
+Drop a video in, get a smaller one back. One screen, no settings.
 
-## Web UI Quick Start
-
-Run this project as a browser app:
-
-1. Install FFmpeg (required)
-2. Install Python packages:
-
-  pip install -r requirements.txt
-
-3. Start the web server:
-
-  python app.py
-
-4. Open browser:
-
-  http://127.0.0.1:5000
-
-5. Upload video, click Compress And Download
-
-The compressed file downloads automatically as soon as compression finishes.
-
-Default behavior for UI mode:
-- Keeps original resolution and frame rate
-- Uses H.264 with high quality preset by default
-- Produces MP4 output for best compatibility
-- Returns file directly as download response
-
-## Features
-
-✨ **Key Features:**
-- 🎥 **Multiple Format Support**: Works with MP4, AVI, MKV, MOV, FLV, WMV, WebM, and more
-- 🎯 **Quality Presets**: 5 preset levels from ultra-high quality to very compressed
-- 🔊 **Audio Codec Options**: Support for AAC, MP3, Opus, or original audio passthrough
-- 📁 **Batch Processing**: Compress multiple videos at once
-- 📊 **Detailed Compression Stats**: See exact size reduction and compression ratios
-- ⚡ **Intelligent Encoding**: Uses H.264 codec with optimized settings for fast encoding
-- 🛡️ **Safe Defaults**: Preserves quality while achieving significant size reduction
-
-## Requirements
-
-- **Python 3.7+**
-- **FFmpeg 4.0+** (with libx264 support)
-- **ffprobe** (usually bundled with FFmpeg)
-
-## Installation
-
-### 1. Install FFmpeg
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get update
-sudo apt-get install ffmpeg
-```
-
-**macOS (Homebrew):**
-```bash
-brew install ffmpeg
-```
-
-**Windows:**
-Download from https://ffmpeg.org/download.html or use:
-```bash
-choco install ffmpeg
-```
-
-### 2. Install Python Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-Or manually:
-```bash
-pip install ffmpeg-python click colorama tqdm
-```
-
-### 3. Verify Installation
-
-```bash
-python video_compressor.py presets
-```
-
-## Usage
-
-### Single Video Compression
-
-Basic compression with default balanced quality:
-```bash
-python video_compressor.py compress input.mp4 output.mp4
-```
-
-With high quality preset:
-```bash
-python video_compressor.py compress input.mp4 output.mp4 --quality high
-```
-
-Remove original file after compression:
-```bash
-python video_compressor.py compress input.mp4 output.mp4 --keep-original False
-```
-
-### Batch Processing
-
-Compress all videos in a directory:
-```bash
-python video_compressor.py batch ./videos ./compressed_videos
-```
-
-With specific quality level:
-```bash
-python video_compressor.py batch ./videos ./compressed_videos --quality medium
-```
-
-### Video Information
-
-Get detailed information about a video:
-```bash
-python video_compressor.py info video.mp4
-```
-
-### Quality Presets
-
-View all available quality presets:
-```bash
-python video_compressor.py presets
-```
-
-## Quality Presets Explained
-
-### ultra_high
-- **CRF**: 15 (very high quality, more detail preserved)
-- **Preset**: slow (more encoding time, better compression)
-- **Use Case**: Professional content, archival, when quality is critical
-- **File Size**: ~20-30% reduction
-
-### high
-- **CRF**: 18 (high quality, suitable for most content)
-- **Preset**: medium (balanced encoding time)
-- **Use Case**: High-quality storage, streaming
-- **File Size**: ~30-40% reduction
-
-### balanced ⭐ (Default)
-- **CRF**: 23 (good quality-compression balance)
-- **Preset**: medium (balanced encoding time)
-- **Use Case**: General purpose video compression
-- **File Size**: ~40-50% reduction
-
-### medium
-- **CRF**: 28 (noticeable quality reduction)
-- **Preset**: fast (quick encoding)
-- **Use Case**: Social media, quick sharing
-- **File Size**: ~50-60% reduction
-
-### low
-- **CRF**: 32 (significant quality reduction)
-- **Preset**: veryfast (very quick encoding)
-- **Use Case**: Maximum compression, temporary files
-- **File Size**: ~60-70% reduction
-
-**CRF Scale**: 0-51 (0 = lossless, 18-28 = visually lossless, 51 = worst quality)
-
-## Audio Codec Options
-
-- **aac** (default): High-quality audio, universal compatibility, 128 kbps
-- **mp3**: Maximum compatibility, 128 kbps
-- **opus**: Modern codec, excellent quality at low bitrate, 128 kbps
-- **copy**: Preserve original audio without re-encoding (fastest)
-
-## Command Line Arguments
-
-### compress command
-```
-python video_compressor.py compress INPUT OUTPUT [OPTIONS]
-
-Arguments:
-  INPUT                     Input video file path
-  OUTPUT                    Output video file path
-
-Options:
-  --quality {ultra_high, high, balanced, medium, low}
-                            Quality preset (default: balanced)
-  --audio {aac, mp3, opus, copy}
-                            Audio codec (default: aac)
-  --keep-original          Keep original file (default: True)
-```
-
-### batch command
-```
-python video_compressor.py batch INPUT_DIR OUTPUT_DIR [OPTIONS]
-
-Arguments:
-  INPUT_DIR                 Input directory containing videos
-  OUTPUT_DIR                Output directory for compressed videos
-
-Options:
-  --quality {ultra_high, high, balanced, medium, low}
-                            Quality preset (default: balanced)
-  --audio {aac, mp3, opus, copy}
-                            Audio codec (default: aac)
-```
-
-### info command
-```
-python video_compressor.py info VIDEO
-
-Arguments:
-  VIDEO                     Video file path
-```
-
-## Examples
-
-### Example 1: Compress a 4K video while maintaining quality
-```bash
-python video_compressor.py compress 4k_video.mp4 4k_compressed.mp4 --quality high
-```
-
-### Example 2: Quickly compress for sharing (smaller file)
-```bash
-python video_compressor.py compress video.mp4 video_small.mp4 --quality medium
-```
-
-### Example 3: Batch compress all videos with MP3 audio
-```bash
-python video_compressor.py batch ./raw_videos ./compressed_videos --quality balanced --audio mp3
-```
-
-### Example 4: Archive video with best quality
-```bash
-python video_compressor.py compress project.mov project_archive.mp4 --quality ultra_high --audio copy
-```
-
-### Example 5: Quick compression and delete original
-```bash
-python video_compressor.py compress temp_video.avi temp_video.mp4 --quality low --keep-original False
-```
-
-## How It Works
-
-1. **Codec**: Uses H.264 (libx264) - widely compatible, efficient
-2. **Quality Control**: CRF (Constant Quality Rate) value for consistent quality
-3. **Optimization**: 
-   - Appropriate preset (ultrafast → slow) based on quality level
-   - `movflags +faststart` for streaming optimization
-   - Optimized audio bitrate
-4. **Safety**: Validates inputs, asks before overwriting, cleans up on errors
-
-## Performance Tips
-
-1. **Use SSD**: Video encoding is disk-intensive
-2. **Multi-Core System**: FFmpeg automatically uses all available cores
-3. **Quick Preview**: Use `--quality medium` first to test settings
-4. **Batch Processing**: Process multiple videos overnight
-5. **Monitor Resources**: FFmpeg can use significant CPU and RAM
-
-## Typical Size Reductions
-
-| Format | Quality | Size Reduction |
-|--------|---------|----------------|
-| H.264 (MP4) | balanced | 40-50% |
-| H.265 (HEVC) | balanced | 50-60% |
-| AVI | balanced | 60-70% |
-| MOV | balanced | 50-60% |
-
-**Note**: Actual reductions depend on source codec, resolution, and format.
-
-## Troubleshooting
-
-### FFmpeg not found
-```
-Error: FFmpeg is not installed or not in PATH
-```
-**Solution**: Install FFmpeg and ensure it's in your system PATH
-
-### Permission denied
-```
-PermissionError: [Errno 13] Permission denied: 'output.mp4'
-```
-**Solution**: Check output directory permissions or specify a different output location
-
-### Codec not available
-```
-Unknown encoder 'libx264'
-```
-**Solution**: Reinstall FFmpeg with libx264 support
-
-### Out of disk space
-```
-Error: No space left on device
-```
-**Solution**: Ensure sufficient disk space (at least 1.5x the original video size)
-
-### Very slow encoding
-The `slow` preset in `ultra_high` quality takes longer. Use `high` or `balanced` for faster encoding.
-
-## Advanced Usage
-
-### Custom FFmpeg Parameters
-
-For advanced users, modify the `compress_video` method to add custom FFmpeg flags:
-```python
-cmd.extend(['-tune', 'film'])  # Optimize for film content
-cmd.extend(['-rc-lookahead', '60'])  # Better quality
-```
-
-### Python API Usage
-
-```python
-from video_compressor import VideoCompressor
-
-compressor = VideoCompressor()
-
-# Compress a single video
-compressor.compress_video(
-    'input.mp4',
-    'output.mp4',
-    quality='high',
-    audio_codec='aac'
-)
-
-# Get video information
-info = compressor.get_video_info('video.mp4')
-
-# Get file size
-size_bytes, size_str = compressor.get_file_size('video.mp4')
-```
-
-## Supported Formats
-
-**Video Formats**: MP4, AVI, MKV, MOV, FLV, WMV, WebM, 3GP, OGV, and more
-**Audio Formats**: AAC, MP3, Opus (in various containers)
-**Codecs**: H.264, H.265, VP8, VP9, AV1 input support
-
-## Performance Benchmarks
-
-On a modern CPU (6-core i7):
-- **1080p 5-min video**: ~2-5 minutes (balanced quality)
-- **4K 10-min video**: ~10-20 minutes (balanced quality)
-- **480p YouTube**: ~30-60 seconds (medium quality)
-
-## Limitations
-
-- Transcoding takes time (proportional to video length)
-- Very high-quality videos may not compress well
-- Some codecs (like AV1) not supported for output (future enhancement)
-
-## Future Enhancements
-
-- [ ] H.265/HEVC codec support for better compression
-- [ ] AV1 codec support
-- [ ] GPU acceleration (NVIDIA NVENC, AMD VCE)
-- [ ] Subtitle and metadata preservation
-- [ ] Progress bar for long operations
-- [ ] Web UI for ease of use
-- [ ] Automatic quality selection based on content analysis
-
-## Contributing
-
-Contributions are welcome! Areas for improvement:
-- GPU encoding support
-- Additional codec options
-- Performance optimizations
-- Better error handling
-- GUI interface
-
-## License
-
-This project is open source and available under the MIT License.
-
-## Disclaimer
-
-This tool is for personal use with content you own or have permission to process. Always respect copyright laws and content creator rights.
-
-## Support
-
-For issues, bugs, or feature requests, please open an issue on GitHub.
+It measures how wastefully your video was encoded, finds the smallest file that
+still looks identical, and never hands back something bigger than what you gave
+it. Typical reductions on camera and phone footage are **80–90%**.
 
 ---
 
-**Made with ❤️ for video enthusiasts and content creators**
+## Running it on a new laptop
+
+Everything below is required. Steps 1 and 2 are the only ones that ever cause
+trouble, and step 4 tells you immediately if either went wrong.
+
+### 1. Install Python 3.9 or newer
+
+Check whether you already have it:
+
+```bash
+python3 --version        # macOS / Linux
+python --version         # Windows
+```
+
+If that prints 3.9 or higher, skip ahead.
+
+| OS | How |
+|---|---|
+| **macOS** | `brew install python` — or download from [python.org](https://www.python.org/downloads/) |
+| **Windows** | Download from [python.org](https://www.python.org/downloads/). **Tick "Add Python to PATH"** on the first screen of the installer — if you miss it, nothing below will work |
+| **Linux** | `sudo apt install python3 python3-pip` (Debian/Ubuntu) or `sudo dnf install python3 python3-pip` (Fedora) |
+
+### 2. Install FFmpeg — the important one
+
+This app is a front end over FFmpeg. Without it, nothing runs.
+
+| OS | How |
+|---|---|
+| **macOS** | `brew install ffmpeg` (install [Homebrew](https://brew.sh) first if needed) |
+| **Windows** | `winget install Gyan.FFmpeg` in PowerShell. Then **close and reopen the terminal** so PATH updates |
+| **Linux** | `sudo apt install ffmpeg` or `sudo dnf install ffmpeg` |
+
+Verify:
+
+```bash
+ffmpeg -version
+```
+
+If it prints version info, you're set. If it says "command not found", FFmpeg
+isn't on your PATH — see [Troubleshooting](#troubleshooting).
+
+> **Windows note:** the `winget` build above includes everything needed. If you
+> download FFmpeg manually, get a **full/GPL build** (gyan.dev or BtbN), not the
+> "essentials" build — the smaller ones ship without the quality-measurement
+> library, and the app will fall back to estimating quality instead of measuring
+> it.
+
+### 3. Get the project and install its one dependency
+
+```bash
+cd path/to/VideoCompressor
+pip install -r requirements.txt
+```
+
+The only Python dependency is Flask. Everything else is FFmpeg.
+
+<details>
+<summary>Using a virtual environment (recommended, optional)</summary>
+
+Keeps this project's packages separate from the rest of your system:
+
+```bash
+# macOS / Linux
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Windows
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+You need to run the `activate` line again each time you open a new terminal.
+</details>
+
+### 4. Check the setup before running
+
+```bash
+python video_compressor.py check
+```
+
+This is the single most useful command on a new machine. Expected output:
+
+```
+  FFmpeg   /opt/homebrew/bin/ffmpeg
+           ffmpeg version 7.1.1 ...
+  VMAF     available
+  Codecs
+    [yes] H.265 / HEVC     Plays natively on macOS, iOS, Windows 10+, Android 5+.
+    [yes] AV1              Smallest files. Slower to encode; needs a recent player.
+    [yes] H.264 / AVC      Plays on anything ever made.
+```
+
+- **`VMAF available`** — quality is measured. This is what you want.
+- **`VMAF MISSING`** — the app still works, but it *estimates* quality instead
+  of measuring it. Install a fuller FFmpeg build to fix.
+- **At least one `[yes]` codec** is required. All three is normal.
+
+### 5. Run it
+
+```bash
+python app.py
+```
+
+Then open **<http://127.0.0.1:5001>** in your browser.
+
+Drag a video onto the page. That's the whole interface.
+
+To stop the server, press `Ctrl+C` in the terminal.
+
+---
+
+## What you'll see
+
+**Idle** — a drop zone. Nothing else.
+
+**Working** — one progress bar and one line: *Analyzing… → Finding the best
+quality… → Compressing…*
+
+**Done** — one line, e.g. *"Reduced by 82% (VMAF 95)"*, and a Download button.
+
+**Occasionally** — *"This file is already efficient — compressing it further
+would make it worse, so nothing was changed."* This is not an error. It means
+your file is already well compressed, and re-encoding it would produce a
+**larger** file with worse quality. Keeping the original is the right answer.
+There's a **Compress anyway** button if you want it regardless.
+
+Two lines appear only when relevant:
+
+- *"Compressed quickly using hardware acceleration…"* — the video was long
+  enough that software encoding wouldn't finish in a reasonable time.
+- *"Saved as .mp4 — your original format doesn't support this codec."* — e.g. a
+  `.mov` compressed with AV1, which QuickTime's container can't hold.
+
+---
+
+## Troubleshooting
+
+**"FFmpeg was not found"**
+
+The app searches your PATH and the usual install locations. If FFmpeg lives
+somewhere unusual, point at it directly:
+
+```bash
+# macOS / Linux
+export FFMPEG_BINARY=/path/to/ffmpeg
+export FFPROBE_BINARY=/path/to/ffprobe
+
+# Windows (PowerShell)
+$env:FFMPEG_BINARY="C:\path\to\ffmpeg.exe"
+$env:FFPROBE_BINARY="C:\path\to\ffprobe.exe"
+```
+
+**"Port 5001 is in use"**
+
+Either something else is using it, or a previous run is still going:
+
+```bash
+PORT=5055 python app.py           # macOS / Linux
+$env:PORT=5055; python app.py     # Windows
+```
+
+**Windows: `python` is not recognised**
+
+Python wasn't added to PATH during install. Re-run the installer, choose
+"Modify", and tick "Add Python to PATH".
+
+**It's slower than expected**
+
+Encoding is CPU-bound, and this app deliberately favours smaller files over
+speed. Rough guide on a modern laptop: a 1-minute 1080p video takes 1–3 minutes.
+Longer videos switch to faster settings automatically, and very long ones use
+hardware acceleration.
+
+**The result was bigger, so nothing happened**
+
+Working as intended — see the refusal note above.
+
+---
+
+## How it works
+
+Most compressors apply a fixed preset and hand you whatever comes out. But the
+size available in a video isn't a property of the encoder — it's a property of
+how wastefully the source was encoded to begin with.
+
+1. **Analyse.** Measure bits per pixel per frame. A phone recording sits near
+   0.10–0.20; a well-encoded download near 0.02. The first has huge headroom,
+   the second almost none.
+2. **Search.** Encode short samples from across the video at different quality
+   settings, score each against the original with
+   [VMAF](https://github.com/Netflix/vmaf) (Netflix's perceptual quality
+   metric), and binary-search for the smallest file that still scores 95 — the
+   level where differences aren't perceptible in normal viewing.
+3. **Encode once** at that setting, then verify the result really is smaller.
+
+Three guards make sure you never get a worse file: the analysis predicts
+available savings before encoding, the samples project the output size and abort
+if it would grow, and a finished encode that is somehow still larger is
+discarded.
+
+Everything is chosen for you: quality floor 95, the best codec your FFmpeg
+supports, encoder effort matched to the video's length, audio copied through
+untouched when it's already efficient, and resolution preserved.
+
+---
+
+## Command line (optional)
+
+The web app is the main interface, but the same engine has a CLI:
+
+```bash
+python video_compressor.py check                  # verify the setup
+python video_compressor.py info holiday.mov       # analyse without encoding
+python video_compressor.py compress holiday.mov   # -> holiday_compressed.mp4
+python video_compressor.py batch ./clips ./out    # a whole folder
+```
+
+`info` is handy for deciding whether a file is worth compressing — it prints the
+measured bpp and expected savings in a second or two, without encoding anything.
+
+Useful flags: `--codec {h265,av1,h264}`, `--vmaf N` (quality floor),
+`--speed {quality,balanced,fast}`, `--max-height 1080`, `--even-if-bigger`.
+Run `python video_compressor.py compress --help` for the full list.
+
+---
+
+## Project layout
+
+```
+app.py             Web server: upload, job queue, REST API
+upload_store.py    Resumable uploads (survive a dropped connection)
+compressor/
+  environment.py   Finds FFmpeg, detects what it can do
+  probe.py         Source analysis, the bits-per-pixel waste metric
+  encoders.py      Codec definitions and FFmpeg arguments
+  quality.py       VMAF sampling and the quality search
+  segmenter.py     Scene detection and per-scene encoding
+  engine.py        Orchestration, progress, cancellation
+  cli.py           Command-line interface
+templates/         The one page
+static/            Its stylesheet and logic
+```
+
+`uploads/` and `outputs/` are created automatically and are safe to delete when
+the app isn't running.
+
+---
+
+## Notes
+
+- **Runs entirely on your machine.** Nothing is uploaded anywhere; the server
+  binds to localhost only.
+- **Your originals are never modified or deleted.**
+- **Large files are fine.** Uploads stream to disk in chunks and resume after a
+  dropped connection — a 1.19 GB upload uses about 2 MB of memory.

@@ -78,3 +78,6 @@ compressed/
 processed/
 uploads/
 outputs/
+
+# Generated test fixtures (rebuilt by tests/fixtures.py)
+tests/fixtures/

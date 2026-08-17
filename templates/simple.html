@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compress a video</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/static/simple.css" />
+</head>
+
+<body class="simple-body">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <main class="simple-shell">
+    <h1 class="simple-title">Compress a video</h1>
+
+    <!-- ============ STATE A: idle ============ -->
+    <section id="state-idle" class="simple-card">
+      <div id="drop-zone" class="drop-zone simple-drop">
+        <input id="file-input" type="file" accept="video/*" />
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 16V4M12 4L7 9M12 4L17 9M4 17V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V17"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <p class="upload-title">Drop a video here</p>
+        <p class="upload-subtitle">or click to choose one</p>
+      </div>
+    </section>
+
+    <!-- ============ STATE B: working / done ============ -->
+    <section id="state-working" class="simple-card hidden">
+      <p id="simple-filename" class="simple-filename"></p>
+
+      <!-- working -->
+      <div id="working">
+        <div class="progress-track"><div id="simple-fill" class="progress-fill"></div></div>
+        <p id="simple-status" class="simple-status">Analyzing…</p>
+      </div>
+
+      <!-- done -->
+      <div id="done" class="hidden">
+        <p id="simple-result" class="simple-result"></p>
+        <p id="simple-note" class="simple-note hidden"></p>
+        <div class="simple-actions">
+          <button id="simple-download" class="btn btn-primary">Download</button>
+          <button id="simple-again" class="btn btn-ghost">Compress another</button>
+        </div>
+      </div>
+
+      <!-- refused -->
+      <div id="refused" class="hidden">
+        <p class="simple-result muted">
+          This file is already efficient — compressing it further would make it
+          worse, so nothing was changed.
+        </p>
+        <div class="simple-actions">
+          <button id="simple-force" class="btn btn-ghost">Compress anyway</button>
+          <button id="simple-again-2" class="btn btn-ghost">Try another file</button>
+        </div>
+      </div>
+
+      <!-- error -->
+      <div id="failed" class="hidden">
+        <p id="simple-error" class="simple-result muted"></p>
+        <div class="simple-actions">
+          <button id="simple-again-3" class="btn btn-ghost">Try another file</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/simple.js"></script>
+</body>
+
+</html>
